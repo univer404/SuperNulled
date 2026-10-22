@@ -33,6 +33,7 @@ export default function ResourceManager() {
     const [form, setForm] = useState<FormState>(EMPTY_FORM);
     const [productFile, setProductFile] = useState<File | null>(null);
     const [thumbnail, setThumbnail] = useState<File | null>(null);
+    const [descriptionImages, setDescriptionImages] = useState<File[]>([]);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
@@ -53,11 +54,11 @@ export default function ResourceManager() {
     }
 
     function openCreate() {
-        setEditing(null); setForm(EMPTY_FORM); setProductFile(null); setThumbnail(null); setMessage(null); setFormOpen(true);
+        setEditing(null); setForm(EMPTY_FORM); setProductFile(null); setThumbnail(null); setDescriptionImages([]); setMessage(null); setFormOpen(true);
     }
 
     function openEdit(resource: AdminResource) {
-        setEditing(resource); setProductFile(null); setThumbnail(null); setMessage(null); setFormOpen(true);
+        setEditing(resource); setProductFile(null); setThumbnail(null); setDescriptionImages([]); setMessage(null); setFormOpen(true);
         setForm({ title: resource.title, slug: resource.slug, description: resource.description, category: resource.category, price: String(resource.price), version: resource.version ?? '', tags: resource.tags.join(', '), published: resource.published, featured: resource.featured });
     }
 
@@ -75,6 +76,8 @@ export default function ResourceManager() {
         if (productFile && !PRODUCT_EXTENSIONS.includes(extensionOf(productFile.name))) return 'That product file type is not allowed.';
         if (productFile && productFile.size > MAX_PRODUCT_BYTES) return 'Product file is larger than the 50 MB upload limit.';
         if (thumbnail && !IMAGE_EXTENSIONS.includes(extensionOf(thumbnail.name))) return 'Thumbnail must be a PNG, JPG or WebP image.';
+        if (descriptionImages.some((file) => !IMAGE_EXTENSIONS.includes(extensionOf(file.name)))) return 'Description images must be PNG, JPG or WebP files.';
+        if (descriptionImages.some((file) => file.size > 8 * 1024 * 1024)) return 'Each description image must be 8 MB or smaller.';
         return null;
     }
 
@@ -100,8 +103,16 @@ export default function ResourceManager() {
                 thumbnail_path = `thumbnails/${id}-${Date.now()}.${extensionOf(thumbnail.name)}`;
                 await uploadFile(PUBLIC_BUCKET, thumbnail_path, thumbnail);
             }
+            let description = form.description.trim();
+            const descriptionImagePaths: string[] = [];
+            for (const image of descriptionImages) {
+                const path = `descriptions/${id}/${Date.now()}-${safeFileName(image.name)}`;
+                await uploadFile(PUBLIC_BUCKET, path, image);
+                descriptionImagePaths.push(path);
+            }
+            if (descriptionImagePaths.length) description += (description ? '\\n\\n' : '') + descriptionImagePaths.map((path) => `[[description-image:${path}]]`).join('\\n\\n');
             const fields = {
-                title: form.title.trim(), slug: form.slug, description: form.description.trim(), category: form.category.trim(),
+                title: form.title.trim(), slug: form.slug, description, category: form.category.trim(),
                 price: Number(form.price), version: form.version.trim() || null,
                 tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
                 published: form.published, featured: form.featured,
@@ -154,7 +165,12 @@ export default function ResourceManager() {
                     <div className="sm:col-span-2">
                         <label className="mb-1 block text-sm font-medium" htmlFor="resource-description">Resource description</label>
                         <textarea id="resource-description" className="input w-full" rows={5} placeholder="Describe what this resource does, its main features, requirements, supported versions, installation steps, and anything buyers should know." aria-label="Resource description" value={form.description} onChange={(e) => setField('description', e.target.value)} />
-                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">Write a clear description so visitors know what they are downloading. Include features, compatibility, dependencies, installation instructions, and any limitations. Do not include passwords or private information.</p>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">Write a description and upload screenshots or infographic images below. Include features, compatibility, dependencies, installation steps, and limitations.</p>
+                        <label className="mt-3 block text-sm font-medium">Description images (multiple allowed)
+                            <input className="input mt-1 w-full" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(e) => setDescriptionImages(Array.from(e.target.files ?? []))} />
+                        </label>
+                        <p className="mt-1 text-xs text-zinc-500">PNG, JPG, or WebP · maximum 8 MB each. New images will appear below your written description after saving.</p>
+                        {descriptionImages.length > 0 && <ul className="mt-2 space-y-1 text-xs text-zinc-400">{descriptionImages.map((file, index) => <li key={`${file.name}-${index}`}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>)}</ul>}
                     </div>
                     <input className="input" list="category-options" placeholder="Category" aria-label="Category" value={form.category} onChange={(e) => setField('category', e.target.value)} />
                     <datalist id="category-options">{categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}</datalist>
