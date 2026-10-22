@@ -79,7 +79,14 @@ export default function ResourceDetail() {
         </div>
         <h1 className="mt-6 text-3xl font-bold">{resource.title}</h1>
         <div className="mt-2 flex flex-wrap gap-2"><span className="badge">{resource.category}</span>{resource.tags.map((tag) => <span key={tag} className="badge">{tag}</span>)}</div>
-        <p className="mt-6 whitespace-pre-line text-zinc-300">{resource.description}</p>
+        <div className="mt-6 space-y-4 text-zinc-300">{resource.description.split(/(\\[\\[description-image:[^\\]]+\\]\\])/g).map((part, index) => {
+          const match = part.match(/^\\[\\[description-image:(.+)\\]\\]$/);
+          if (match) {
+            const src = thumbnailUrl(match[1]);
+            return src ? <img key={index} src={src} alt={`${resource.title} description image ${index + 1}`} loading="lazy" className="h-auto max-w-full rounded-xl border border-white/10" /> : null;
+          }
+          return part.trim() ? <p key={index} className="whitespace-pre-line">{part}</p> : null;
+        })}</div>
       </div>
       <aside className="card h-fit space-y-4 p-5">
         <p className="text-3xl font-extrabold text-[#A855F7]">{formatPrice(resource.price)}</p>
