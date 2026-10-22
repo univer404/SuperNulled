@@ -25,14 +25,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    let active = true;
+    let authEventReceived = false;
+
+    // Subscribe before checking the stored session so a sign-in event cannot be
+    // overwritten by a slower, stale getSession() response.
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      authEventReceived = true;
+      if (!active) return;
+      setSession(nextSession);
       setLoading(false);
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, next) =>
-      setSession(next)
-    );
-    return () => data.subscription.unsubscribe();
+
+    supabase.auth.getSession()
+      .then(({ data: sessionData, error }) => {
+        if (!active || authEventReceived) return;
+        if (error) console.error('Unable to restore Supabase session:', error.message);
+        setSession(sessionData.session);
+        setLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (!active || authEventReceived) return;
+        console.error('Unable to restore Supabase session:', error);
+        setSession(null);
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   // Display hint only. Real admin enforcement happens in the database (RLS).
