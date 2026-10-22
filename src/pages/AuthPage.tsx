@@ -20,9 +20,10 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
     const [turnstileToken, setTurnstileToken] = useState('');
     const [turnstileError, setTurnstileError] = useState<string | null>(null);
     const [turnstileReady, setTurnstileReady] = useState(false);
-    // This app uses HashRouter, so auth providers must return to a valid hash route.
+    // Use a clean callback URL without a hash. Supabase OAuth uses the URL fragment
+    // for tokens in some flows, which conflicts with HashRouter routes.
     const appUrl = `${window.location.origin}${window.location.pathname}`;
-    const returnUrl = `${appUrl}#/`;
+    const returnUrl = appUrl;
 
     useEffect(() => {
         let active = true;
