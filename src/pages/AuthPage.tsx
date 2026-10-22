@@ -103,23 +103,59 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
         if (busy) return;
         setError(null);
         setNotice(null);
+
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            setError('Enter a valid email address.');
+            return;
+        }
         if (mode !== 'forgot' && password.length < 8) {
             setError('Password must be at least 8 characters.');
             return;
         }
+
         setBusy(true);
         try {
             if (!(await verifyTurnstile())) return;
+
             if (mode === 'login') {
-                const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-                if (signInError) throw signInError;
-                navigate('/');
+                const { data, error: signInError } = await supabase.auth.signInWithPassword({
+                    email: normalizedEmail,
+                    password,
+                });
+                if (signInError) {
+                    if (/email not confirmed/i.test(signInError.message)) {
+                        throw new Error('Please verify your email using the confirmation link before logging in. If you cannot find it, try creating the account again or request a new confirmation email.');
+                    }
+                    if (/invalid login credentials/i.test(signInError.message)) {
+                        throw new Error('Email or password is incorrect. If you have not created an account yet, choose Create your account first.');
+                    }
+                    throw signInError;
+                }
+                if (!data.session) {
+                    setNotice('Your sign-in was accepted. Check your email if verification is still required.');
+                    return;
+                }
+                navigate('/', { replace: true });
             } else if (mode === 'register') {
-                const { error: signUpError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: returnUrl } });
+                const { data, error: signUpError } = await supabase.auth.signUp({
+                    email: normalizedEmail,
+                    password,
+                    options: { emailRedirectTo: returnUrl },
+                });
                 if (signUpError) throw signUpError;
-                setNotice('Check your email and click the verification link to finish creating your account.');
+
+                if (data.session) {
+                    setNotice('Your account has been created and you are now signed in.');
+                    navigate('/', { replace: true });
+                } else {
+                    setNotice('Account request received. Check your inbox and spam folder for the email confirmation link before logging in. If no email arrives, email confirmation or SMTP may need to be configured in Supabase.');
+                }
             } else {
-                const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${appUrl}?recovery=1#/` });
+                const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+                    normalizedEmail,
+                    { redirectTo: `${appUrl}?recovery=1#/` },
+                );
                 if (resetError) throw resetError;
                 setNotice('If that email has an account, a reset link is on its way.');
             }
@@ -133,11 +169,20 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
     async function handleGoogle() {
         if (busy) return;
         setError(null);
+        setNotice(null);
         setBusy(true);
-        if (!(await verifyTurnstile())) { setBusy(false); return; }
-        const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: returnUrl } });
-        if (oauthError) {
-            setError(`Google sign-in is not available yet: ${oauthError.message}`);
+        try {
+            if (!(await verifyTurnstile())) return;
+            const { error: oauthError } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: returnUrl },
+            });
+            if (oauthError) {
+                setError(`Google sign-in failed: ${oauthError.message}`);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Google sign-in failed. Please try again.');
+        } finally {
             setBusy(false);
         }
     }
