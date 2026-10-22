@@ -3,7 +3,9 @@ import { Package } from 'lucide-react';
 import { formatPrice, thumbnailUrl, type Resource } from '../lib/supabase';
 
 export default function ResourceCard({ resource }: { resource: Resource }) {
-  const image = thumbnailUrl(resource.thumbnail_path);
+  const descriptionImagePath = resource.description.match(/\\[\\[description-image:([^\\]]+)\\]\\]/)?.[1] ?? null;
+  const image = thumbnailUrl(resource.thumbnail_path) ?? thumbnailUrl(descriptionImagePath);
+  const previewDescription = resource.description.replace(/\\[\\[description-image:[^\\]]+\\]\\]/g, '').trim();
   return (
     <Link
       to={`/resource/${resource.slug}`}
@@ -27,7 +29,7 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
           {resource.title}
         </h3>
         <p className="line-clamp-2 text-sm text-zinc-400">
-          {resource.description}
+          {previewDescription}
         </p>
         <p className="font-bold text-[#A855F7]">
           {formatPrice(resource.price)}
