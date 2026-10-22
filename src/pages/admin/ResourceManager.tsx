@@ -8,7 +8,7 @@ interface FormState { title: string; slug: string; description: string; category
 const PRODUCT_BUCKET = 'supernulled-resources';
 const PUBLIC_BUCKET = 'supernulled-public';
 const PRODUCT_EXTENSIONS = ['jar', 'zip', 'rar', '7z', 'sk', 'yml', 'yaml', 'json', 'schem', 'schematic', 'mcworld', 'mcpack', 'png', 'jpg', 'webp', 'pdf', 'txt'];
-const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp'];
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
 // Standard uploads are limited by the Supabase plan (50 MB on the free plan). Raise after checking the plan.
 const MAX_PRODUCT_BYTES = 50 * 1024 * 1024;
 const EMPTY_FORM: FormState = { title: '', slug: '', description: '', category: '', price: '0', version: '', tags: '', published: false, featured: false };
@@ -75,8 +75,8 @@ export default function ResourceManager() {
         if (!editing && !productFile) return 'Choose the product file to upload.';
         if (productFile && !PRODUCT_EXTENSIONS.includes(extensionOf(productFile.name))) return 'That product file type is not allowed.';
         if (productFile && productFile.size > MAX_PRODUCT_BYTES) return 'Product file is larger than the 50 MB upload limit.';
-        if (thumbnail && !IMAGE_EXTENSIONS.includes(extensionOf(thumbnail.name))) return 'Thumbnail must be a PNG, JPG or WebP image.';
-        if (descriptionImages.some((file) => !IMAGE_EXTENSIONS.includes(extensionOf(file.name)))) return 'Description images must be PNG, JPG or WebP files.';
+        if (thumbnail && !IMAGE_EXTENSIONS.includes(extensionOf(thumbnail.name))) return 'Thumbnail must be a PNG, JPG, WebP, or GIF image.';
+        if (descriptionImages.some((file) => !IMAGE_EXTENSIONS.includes(extensionOf(file.name)))) return 'Description images must be PNG, JPG, WebP, or GIF files.';
         if (descriptionImages.some((file) => file.size > 8 * 1024 * 1024)) return 'Each description image must be 8 MB or smaller.';
         return null;
     }
@@ -167,9 +167,9 @@ export default function ResourceManager() {
                         <textarea id="resource-description" className="input w-full" rows={5} placeholder="Describe what this resource does, its main features, requirements, supported versions, installation steps, and anything buyers should know." aria-label="Resource description" value={form.description} onChange={(e) => setField('description', e.target.value)} />
                         <p className="mt-1 text-xs leading-relaxed text-zinc-500">Write a description and upload screenshots or infographic images below. Include features, compatibility, dependencies, installation steps, and limitations.</p>
                         <label className="mt-3 block text-sm font-medium">Description images (multiple allowed)
-                            <input className="input mt-1 w-full" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(e) => setDescriptionImages(Array.from(e.target.files ?? []))} />
+                            <input className="input mt-1 w-full" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={(e) => setDescriptionImages(Array.from(e.target.files ?? []))} />
                         </label>
-                        <p className="mt-1 text-xs text-zinc-500">PNG, JPG, or WebP · maximum 8 MB each. New images will appear below your written description after saving.</p>
+                        <p className="mt-1 text-xs text-zinc-500">PNG, JPG, WebP, or GIF · maximum 8 MB each. Animated GIFs are supported. New images will appear below your written description after saving.</p>
                         {descriptionImages.length > 0 && <ul className="mt-2 space-y-1 text-xs text-zinc-400">{descriptionImages.map((file, index) => <li key={`${file.name}-${index}`}>{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</li>)}</ul>}
                     </div>
                     <input className="input" list="category-options" placeholder="Category" aria-label="Category" value={form.category} onChange={(e) => setField('category', e.target.value)} />
@@ -178,7 +178,7 @@ export default function ResourceManager() {
                     <input className="input" placeholder="Version (e.g. 1.0.0)" aria-label="Version" value={form.version} onChange={(e) => setField('version', e.target.value)} />
                     <input className="input" placeholder="Tags, comma separated" aria-label="Tags" value={form.tags} onChange={(e) => setField('tags', e.target.value)} />
                     <label className="text-sm">Product file {editing && '(leave empty to keep current)'}<input className="input mt-1" type="file" onChange={(e) => setProductFile(e.target.files?.[0] ?? null)} /></label>
-                    <label className="text-sm">Thumbnail image<input className="input mt-1" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)} /></label>
+                    <label className="text-sm">Thumbnail image<input className="input mt-1" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => setThumbnail(e.target.files?.[0] ?? null)} /></label>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.published} onChange={(e) => setField('published', e.target.checked)} /> Published</label>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.featured} onChange={(e) => setField('featured', e.target.checked)} /> Featured</label>
                     <div className="flex gap-2 sm:col-span-2">
