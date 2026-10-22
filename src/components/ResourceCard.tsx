@@ -5,7 +5,7 @@ import { formatPrice, thumbnailUrl, type Resource } from '../lib/supabase';
 export default function ResourceCard({ resource }: { resource: Resource }) {
     const descriptionImagePath = resource.description.match(/\[\[description-image:(.*?)\]\]/)?.[1] ?? null;
   const image = thumbnailUrl(resource.thumbnail_path) ?? thumbnailUrl(descriptionImagePath);
-    const previewDescription = resource.description.replace(/\[\[description-image:.*?\]\]/g, '').trim();
+    const previewDescription = resource.description.replace(/\\n/g, ' ').replace(/\\r/g, '').replace(/\[\[description-image:.*?\]\]/g, '').trim();
   return (
     <Link
       to={`/resource/${resource.slug}`}
