@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { supabase } from '../../lib/supabase';
-import { api } from '@appdeploy/client';
 
 const KEYS = { announcement: 'public.announcement', support: 'public.support_contact', maintenance: 'public.maintenance', turnstileEnabled: 'public.turnstile_enabled', turnstileSiteKey: 'public.turnstile_site_key', payment: 'public.vip_payment_config' } as const;
 const MAX_TEXT_LENGTH = 300;
@@ -30,8 +29,11 @@ export default function SettingsManager() {
       const saved = values[KEYS.payment] as Partial<PaymentConfig> | undefined;
       if (saved) setPayment({ ...DEFAULT_PAYMENT, ...saved });
     });
-    api.get('/api/turnstile/status').then(({ data }) => {
-      if (data && typeof data.secretConfigured === 'boolean') setSecretConfigured(data.secretConfigured);
+    fetch('/api/turnstile/status').then(async (response) => {
+      if (!response.ok) throw new Error('Could not read Turnstile status');
+      return response.json() as Promise<{ secretConfigured?: boolean }>;
+    }).then((data) => {
+      if (typeof data.secretConfigured === 'boolean') setSecretConfigured(data.secretConfigured);
     }).catch(() => setSecretConfigured(false));
   }, []);
 
@@ -45,7 +47,7 @@ export default function SettingsManager() {
       setMessage({ text: 'Enter a valid Cloudflare Turnstile site key.', ok: false }); return;
     }
     if (turnstileEnabled && (!turnstileSiteKey.trim() || !secretConfigured)) {
-      setMessage({ text: 'Add the Site Key and configure TURNSTILE_SECRET_KEY in AppDeploy backend secrets before enabling verification.', ok: false }); return;
+      setMessage({ text: 'Add the Site Key and configure TURNSTILE_SECRET_KEY in Vercel Environment Variables before enabling verification.', ok: false }); return;
     }
     if (!Number.isInteger(payment.subscription_days) || payment.subscription_days < 1 || payment.subscription_days > 365) {
       setMessage({ text: 'Subscription duration must be between 1 and 365 days.', ok: false }); return;
@@ -79,7 +81,7 @@ export default function SettingsManager() {
       <section className="space-y-4 rounded-xl border border-[#2a2145] p-4">
         <div><h2 className="font-semibold">Cloudflare Turnstile login protection</h2><p className="mt-1 text-xs text-zinc-400">The Site Key is public; the Secret Key must stay server-side.</p></div>
         <label className="block text-sm">Cloudflare Turnstile Site Key<input className="input mt-1" autoComplete="off" value={turnstileSiteKey} onChange={(e) => setTurnstileSiteKey(e.target.value.trim())} placeholder="0x4AAAA..." /></label>
-        <div className="rounded-lg border border-zinc-700 p-3 text-xs text-zinc-300"><p>Secret Key status: <strong className={secretConfigured ? 'text-emerald-400' : 'text-amber-300'}>{secretConfigured ? 'Configured' : 'Not configured'}</strong></p><p className="mt-1">Configure the Cloudflare Secret Key as an AppDeploy backend secret named <code>TURNSTILE_SECRET_KEY</code>.</p></div>
+        <div className="rounded-lg border border-zinc-700 p-3 text-xs text-zinc-300"><p>Secret Key status: <strong className={secretConfigured ? 'text-emerald-400' : 'text-amber-300'}>{secretConfigured ? 'Configured' : 'Not configured'}</strong></p><p className="mt-1">Configure the Cloudflare Secret Key in Vercel Environment Variables as <code>TURNSTILE_SECRET_KEY</code>.</p></div>
         <label className="flex items-start gap-2 text-sm"><input className="mt-1" type="checkbox" checked={turnstileEnabled} onChange={(e) => setTurnstileEnabled(e.target.checked)} /><span>Require Cloudflare verification on login and signup</span></label>
       </section>
       <section className="space-y-4 rounded-xl border border-[#2a2145] p-4">
