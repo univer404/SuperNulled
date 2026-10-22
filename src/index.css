@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: #08080d;
+  color: #fff;
+}
+body {
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C4B5FD] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-[#7C3AED] text-white hover:bg-[#A855F7] hover:shadow-[0_0_18px_rgba(168,85,247,0.45)] active:scale-95;
+  }
+  .btn-ghost {
+    @apply btn border border-[#2a2145] text-[#C4B5FD] hover:border-[#A855F7] hover:bg-[#151522];
+  }
+  .card {
+    @apply rounded-xl border border-[#2a2145] bg-[#151522] transition duration-200;
+  }
+  .input {
+    @apply w-full rounded-lg border border-[#2a2145] bg-[#11111B] px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-[#A855F7] focus:outline-none focus:ring-1 focus:ring-[#A855F7];
+  }
+  .badge {
+    @apply inline-block rounded-full bg-[#7C3AED]/20 px-2 py-0.5 text-xs font-medium text-[#C4B5FD];
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "name": "Search shows empty state when nothing is published",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "storefront browse",
+      "search and filters",
+      "empty state",
+      "SuperNulled branding"
+    ],
+    "description": "Verifies the storefront loads with branding and browsing an empty catalog shows an empty state.",
+    "steps": [
+      "Open the home page and confirm the SuperNulled logo is visible",
+      "Click Browse Resources in the navigation",
+      "Type 'plugin' in the title search box and press Enter"
+    ],
+    "expected": "The Browse Resources heading is visible and the message No resources found is shown."
+  },
+  {
+    "name": "Registration rejects a short password",
+    "viewport": "desktop",
+    "covers": [
+      "registration form validation",
+      "invalid-write guardrail",
+      "Google sign-in option",
+      "optional Cloudflare Turnstile challenge"
+    ],
+    "description": "Verifies the register form shows a Google option and blocks weak passwords before contacting the server.",
+    "steps": [
+      "Click Register in the navigation",
+      "Confirm a Continue with Google button is visible",
+      "Enter test@example.com as the email and short as the password",
+      "Click the Create your account button"
+    ],
+    "expected": "The message Password must be at least 8 characters. is visible and no verification notice appears."
+  },
+  {
+    "name": "Anonymous visitors cannot use admin or library pages",
+    "viewport": "desktop",
+    "covers": [
+      "admin route protection",
+      "anonymous denial",
+      "login-required redirect",
+      "404 page"
+    ],
+    "description": "Verifies anonymous users are denied admin access, redirected from private pages, and see a 404 for unknown routes.",
+    "steps": [
+      "Open the address ending in #/admin",
+      "Open the address ending in #/library",
+      "Open the address ending in #/does-not-exist"
+    ],
+    "expected": "Admin shows Sign in required, library redirects to the Log in form, and the unknown route shows Page not found."
+  },
+  {
+    "name": "Administrator can configure Cloudflare Turnstile protection",
+    "viewport": "desktop",
+    "covers": [
+      "admin Cloudflare Turnstile settings",
+      "site key configuration",
+      "server-side secret status",
+      "login and signup verification setup"
+    ],
+    "description": "Verifies the administrator can access the Turnstile configuration fields and see whether the server-side secret has been configured.",
+    "setup": [
+      "Sign in using the configured site administrator account."
+    ],
+    "steps": [
+      "Open #/admin",
+      "Select Settings",
+      "Find the Cloudflare Turnstile login protection section",
+      "Confirm the Site Key field, Secret Key status, and enable checkbox are visible"
+    ],
+    "expected": "The Turnstile setup section explains that the Site Key is stored in settings and the Secret Key must be configured server-side as TURNSTILE_SECRET_KEY."
+  },
+  {
+    "name": "VIP receipt screening and isolated test mode",
+    "viewport": "desktop",
+    "covers": [
+      "two free downloads per Manila calendar day",
+      "server-side daily limit enforcement",
+      "VIP unlimited free downloads",
+      "admin-configurable VIP payment settings",
+      "private receipt upload",
+      "duplicate transaction reference detection",
+      "duplicate receipt file detection",
+      "amount mismatch warning",
+      "test submissions clearly labelled",
+      "test approvals never grant VIP",
+      "atomic admin review"
+    ],
+    "description": "Verifies free download enforcement and the VIP payment review workflow, including suspicious receipt flags and a safe test mode that cannot grant membership.",
+    "setup": [
+      "Sign in as an administrator, enable test mode but leave real payments disabled, then sign in as a Basic Member."
+    ],
+    "steps": [
+      "Open a free resource and download it",
+      "Download a second free resource",
+      "Try a third free resource on the same Manila calendar day",
+      "Open Account and submit a test reference with a JPG/PNG/WEBP/PDF test receipt",
+      "Confirm the account shows a TEST-labelled pending submission",
+      "As an administrator, open VIP Payments and inspect the submission and any risk flags",
+      "Approve the test submission"
+    ],
+    "expected": "The third free download is rejected by the server; the test receipt appears as TEST; admin review can approve its workflow status but does not grant VIP access."
+  }
+]
