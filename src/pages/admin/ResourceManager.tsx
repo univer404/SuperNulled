@@ -151,7 +151,11 @@ export default function ResourceManager() {
                     <h2 className="font-semibold sm:col-span-2">{editing ? 'Edit resource' : 'New resource'}</h2>
                     <input className="input" placeholder="Title" aria-label="Title" value={form.title} onChange={(e) => { setField('title', e.target.value); if (!editing) setField('slug', slugify(e.target.value)); }} />
                     <input className="input" placeholder="slug-for-url" aria-label="Slug" value={form.slug} onChange={(e) => setField('slug', e.target.value)} />
-                    <textarea className="input sm:col-span-2" rows={4} placeholder="Description" aria-label="Description" value={form.description} onChange={(e) => setField('description', e.target.value)} />
+                    <div className="sm:col-span-2">
+                        <label className="mb-1 block text-sm font-medium" htmlFor="resource-description">Resource description</label>
+                        <textarea id="resource-description" className="input w-full" rows={5} placeholder="Describe what this resource does, its main features, requirements, supported versions, installation steps, and anything buyers should know." aria-label="Resource description" value={form.description} onChange={(e) => setField('description', e.target.value)} />
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-500">Write a clear description so visitors know what they are downloading. Include features, compatibility, dependencies, installation instructions, and any limitations. Do not include passwords or private information.</p>
+                    </div>
                     <input className="input" list="category-options" placeholder="Category" aria-label="Category" value={form.category} onChange={(e) => setField('category', e.target.value)} />
                     <datalist id="category-options">{categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}</datalist>
                     <input className="input" type="number" min="0" step="0.01" placeholder="Price (PHP, 0 = free)" aria-label="Price in PHP" value={form.price} onChange={(e) => setField('price', e.target.value)} />
