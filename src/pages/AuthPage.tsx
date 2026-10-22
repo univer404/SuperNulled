@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
 import { supabase } from '../lib/supabase';
-import { api } from '@appdeploy/client';
 import { useEffect } from 'react';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
@@ -82,8 +81,13 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
             return false;
         }
         try {
-            const response = await api.post('/api/turnstile/verify', { token: turnstileToken });
-            if (response.data?.verified === true) return true;
+            const response = await fetch('/api/turnstile/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: turnstileToken }),
+            });
+            const result = await response.json() as { verified?: boolean };
+            if (response.ok && result.verified === true) return true;
             setTurnstileError('Cloudflare verification failed. Please try again.');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Cloudflare verification failed. Please try again.';
