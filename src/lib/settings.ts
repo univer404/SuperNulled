@@ -10,6 +10,18 @@ let cachedSettings: PublicSettings | null = (() => {
 let settingsPromise: Promise<PublicSettings> | null = null;
 const listeners = new Set<(settings: PublicSettings) => void>();
 
+function applyWebsiteMetadata(settings: PublicSettings) {
+    if (typeof document === 'undefined') return;
+    document.title = `${settings.siteName} — Digital Resource Marketplace`;
+    let description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (!description) {
+        description = document.createElement('meta');
+        description.name = 'description';
+        document.head.appendChild(description);
+    }
+    description.content = settings.siteDescription;
+}
+
 export interface PublicSettings { siteName: string; siteDescription: string; announcement: string; supportContact: string; maintenance: boolean }
 
 const DEFAULT_SETTINGS: PublicSettings = { siteName: 'SuperNulled', siteDescription: 'Minecraft plugins, Skripts, maps, configs, server setups and resource packs.', announcement: '', supportContact: '', maintenance: false };
@@ -29,6 +41,7 @@ export function loadPublicSettings(): Promise<PublicSettings> {
                 maintenance: values['public.maintenance'] === true,
             };
             try { localStorage.setItem('supernulled-public-settings', JSON.stringify(cachedSettings)); } catch { /* Storage may be unavailable; memory cache still works. */ }
+            applyWebsiteMetadata(cachedSettings);
             listeners.forEach((listener) => listener(cachedSettings!));
             return cachedSettings;
         }).catch(() => DEFAULT_SETTINGS).finally(() => { settingsPromise = null; });
@@ -38,6 +51,7 @@ export function loadPublicSettings(): Promise<PublicSettings> {
 
 export function usePublicSettings(): PublicSettings {
     const [settings, setSettings] = useState<PublicSettings>(cachedSettings ?? DEFAULT_SETTINGS);
+    useEffect(() => { applyWebsiteMetadata(cachedSettings ?? DEFAULT_SETTINGS); }, []);
 
     useEffect(() => {
         let active = true;
