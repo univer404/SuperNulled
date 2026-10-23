@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
 
-let cachedSettings: PublicSettings | null = null;
+let cachedSettings: PublicSettings | null = (() => {
+    try {
+        const saved = localStorage.getItem('supernulled-public-settings');
+        return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) as Partial<PublicSettings> } : null;
+    } catch { return null; }
+})();
 let settingsPromise: Promise<PublicSettings> | null = null;
 const listeners = new Set<(settings: PublicSettings) => void>();
 
@@ -23,6 +28,7 @@ export function loadPublicSettings(): Promise<PublicSettings> {
                 supportContact: text('public.support_contact'),
                 maintenance: values['public.maintenance'] === true,
             };
+            try { localStorage.setItem('supernulled-public-settings', JSON.stringify(cachedSettings)); } catch { /* Storage may be unavailable; memory cache still works. */ }
             listeners.forEach((listener) => listener(cachedSettings!));
             return cachedSettings;
         }).catch(() => DEFAULT_SETTINGS).finally(() => { settingsPromise = null; });
