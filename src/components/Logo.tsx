@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
+import { usePublicSettings } from '../lib/settings';
 
 export default function Logo({ large = false }: { large?: boolean }) {
+  const { siteName } = usePublicSettings();
+  const splitAt = Math.max(1, Math.ceil(siteName.length * 0.55));
   return (
     <Link
       to="/"
       className="inline-flex items-center gap-2"
-      aria-label="SuperNulled home"
+      aria-label={`${siteName} home`}
     >
       <svg
         viewBox="0 0 32 32"
@@ -23,10 +26,8 @@ export default function Logo({ large = false }: { large?: boolean }) {
       <span
         className={`${large ? 'text-3xl' : 'text-xl'} font-extrabold tracking-tight`}
       >
-        Super
-        <span className="text-[#A855F7] [text-shadow:0_0_14px_rgba(168,85,247,0.7)]">
-          Nulled
-        </span>
+        {siteName.slice(0, splitAt)}
+        <span className="text-[#A855F7] [text-shadow:0_0_14px_rgba(168,85,247,0.7)]">{siteName.slice(splitAt)}</span>
       </span>
     </Link>
   );
