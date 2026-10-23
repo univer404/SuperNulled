@@ -105,7 +105,7 @@ export default function Layout() {
                     <Link to="/privacy" className="hover:text-[#C4B5FD]">Privacy Policy</Link>
                     <Link to="/refunds" className="hover:text-[#C4B5FD]">Refund Policy</Link>
                 </div>
-                © {new Date().getFullYear()} SuperNulled — Digital Resource Marketplace
+                © {new Date().getFullYear()} {settings.siteName} — {settings.siteDescription}
             </footer>
         </div>
     );
