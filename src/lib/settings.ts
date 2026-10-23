@@ -20,6 +20,15 @@ function applyWebsiteMetadata(settings: PublicSettings) {
         document.head.appendChild(description);
     }
     description.content = settings.siteDescription;
+    const setMeta = (selector: string, attribute: 'property' | 'name', key: string, content: string) => {
+        let meta = document.querySelector<HTMLMetaElement>(selector);
+        if (!meta) { meta = document.createElement('meta'); meta.setAttribute(attribute, key); document.head.appendChild(meta); }
+        meta.content = content;
+    };
+    setMeta('meta[property="og:title"]', 'property', 'og:title', `${settings.siteName} — Digital Resource Marketplace`);
+    setMeta('meta[property="og:description"]', 'property', 'og:description', settings.siteDescription);
+    setMeta('meta[name="twitter:title"]', 'name', 'twitter:title', `${settings.siteName} — Digital Resource Marketplace`);
+    setMeta('meta[name="twitter:description"]', 'name', 'twitter:description', settings.siteDescription);
 }
 
 export interface PublicSettings { siteName: string; siteDescription: string; announcement: string; supportContact: string; maintenance: boolean }
