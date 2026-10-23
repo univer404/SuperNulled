@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import ResourceCard from '../components/ResourceCard';
+import { usePublicSettings } from '../lib/settings';
 import {
   RESOURCE_COLUMNS,
   supabase,
@@ -10,6 +11,7 @@ import {
 } from '../lib/supabase';
 
 export default function Home() {
+  const { siteDescription } = usePublicSettings();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [latest, setLatest] = useState<Resource[]>([]);
@@ -58,8 +60,7 @@ export default function Home() {
           </span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-zinc-400">
-          Minecraft plugins, Skripts, maps, configs, server setups and resource
-          packs.
+          {siteDescription}
         </p>
         <form
           onSubmit={handleSearch}
