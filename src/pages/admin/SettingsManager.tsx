@@ -1,13 +1,16 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { supabase } from '../../lib/supabase';
 
-const KEYS = { announcement: 'public.announcement', support: 'public.support_contact', maintenance: 'public.maintenance', turnstileEnabled: 'public.turnstile_enabled', turnstileSiteKey: 'public.turnstile_site_key', payment: 'public.vip_payment_config' } as const;
+const KEYS = { siteName: 'public.site_name', siteDescription: 'public.site_description', announcement: 'public.announcement', support: 'public.support_contact', maintenance: 'public.maintenance', turnstileEnabled: 'public.turnstile_enabled', turnstileSiteKey: 'public.turnstile_site_key', payment: 'public.vip_payment_config' } as const;
 const MAX_TEXT_LENGTH = 300;
+const MAX_DESCRIPTION_LENGTH = 1000;
 type PaymentConfig = { enabled: boolean; test_mode: boolean; method_name: string; account_name: string; account_details: string; instructions: string; subscription_days: number };
 
 const DEFAULT_PAYMENT: PaymentConfig = { enabled: false, test_mode: false, method_name: 'Manual payment', account_name: '', account_details: '', instructions: 'Complete payment using the details shown, then upload your receipt for administrator review.', subscription_days: 30 };
 
 export default function SettingsManager() {
+  const [siteName, setSiteName] = useState('SuperNulled');
+  const [siteDescription, setSiteDescription] = useState('Minecraft plugins, Skripts, maps, configs, server setups and resource packs.');
   const [announcement, setAnnouncement] = useState('');
   const [supportContact, setSupportContact] = useState('');
   const [maintenance, setMaintenance] = useState(false);
@@ -21,6 +24,8 @@ export default function SettingsManager() {
   useEffect(() => {
     supabase.from('site_settings').select('key,value').like('key', 'public.%').then(({ data }) => {
       const values = Object.fromEntries((data ?? []).map((row) => [row.key as string, row.value as unknown]));
+      setSiteName(typeof values[KEYS.siteName] === 'string' && values[KEYS.siteName] ? values[KEYS.siteName] as string : 'SuperNulled');
+      setSiteDescription(typeof values[KEYS.siteDescription] === 'string' && values[KEYS.siteDescription] ? values[KEYS.siteDescription] as string : 'Minecraft plugins, Skripts, maps, configs, server setups and resource packs.');
       setAnnouncement(typeof values[KEYS.announcement] === 'string' ? values[KEYS.announcement] as string : '');
       setSupportContact(typeof values[KEYS.support] === 'string' ? values[KEYS.support] as string : '');
       setMaintenance(values[KEYS.maintenance] === true);
@@ -40,6 +45,8 @@ export default function SettingsManager() {
   async function handleSave(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
+    if (!siteName.trim() || siteName.trim().length > 60) { setMessage({ text: 'Website name is required and must be 60 characters or fewer.', ok: false }); return; }
+    if (siteDescription.length > MAX_DESCRIPTION_LENGTH) { setMessage({ text: `Website description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer.`, ok: false }); return; }
     if (announcement.length > MAX_TEXT_LENGTH || supportContact.length > MAX_TEXT_LENGTH) {
       setMessage({ text: `Keep each text under ${MAX_TEXT_LENGTH} characters.`, ok: false }); return;
     }
@@ -58,6 +65,8 @@ export default function SettingsManager() {
     setBusy(true);
     const now = new Date().toISOString();
     const { error } = await supabase.from('site_settings').upsert([
+      { key: KEYS.siteName, value: siteName.trim(), updated_at: now },
+      { key: KEYS.siteDescription, value: siteDescription.trim(), updated_at: now },
       { key: KEYS.announcement, value: announcement.trim(), updated_at: now },
       { key: KEYS.support, value: supportContact.trim(), updated_at: now },
       { key: KEYS.maintenance, value: maintenance, updated_at: now },
@@ -75,6 +84,11 @@ export default function SettingsManager() {
 
   return (
     <form onSubmit={handleSave} className="card max-w-xl space-y-4 p-4">
+      <section className="space-y-3 rounded-xl border border-[#2a2145] p-4">
+        <div><h2 className="font-semibold">Website identity</h2><p className="mt-1 text-xs text-zinc-400">Change the name shown in the header and the description shown on the homepage.</p></div>
+        <label className="block text-sm">Website name<input className="input mt-1 w-full" maxLength={60} required value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="SuperNulled" /></label>
+        <label className="block text-sm">Homepage description<textarea className="input mt-1 w-full" rows={3} maxLength={MAX_DESCRIPTION_LENGTH} value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} placeholder="Describe your website to visitors" /></label>
+      </section>
       <label className="block text-sm">Announcement banner (leave empty to hide)<input className="input mt-1" maxLength={MAX_TEXT_LENGTH} value={announcement} onChange={(e) => setAnnouncement(e.target.value)} /></label>
       <label className="block text-sm">Support contact (shown on the Support page)<input className="input mt-1" maxLength={MAX_TEXT_LENGTH} value={supportContact} onChange={(e) => setSupportContact(e.target.value)} /></label>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={maintenance} onChange={(e) => setMaintenance(e.target.checked)} /> Maintenance mode (visitors see a notice; you can still log in)</label>
